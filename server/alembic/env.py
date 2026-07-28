@@ -80,11 +80,14 @@ def run_migrations_online() -> None:
     # Get the absolute path to the CA certificate
     cert_path = os.path.join(os.path.dirname(__file__), '..', 'certs', 'DigiCertGlobalRootCA.crt.pem')
 
+    connect_args = {}
+
+    if os.getenv("MYSQL_SSL", "false").lower() == "true":
+        connect_args["ssl_ca"] = cert_path
+
     connectable = create_engine(
         url,
-        connect_args={
-            'ssl_ca': cert_path  # Path to CA certificate
-        }
+        connect_args=connect_args
     )
     
     with connectable.connect() as connection:
