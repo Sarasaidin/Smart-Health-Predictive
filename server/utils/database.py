@@ -18,7 +18,6 @@ DATABASE_URL = 'mysql+pymysql://{}:{}@{}:{}/{}'.format(
 # Get the absolute path to the CA certificate
 cert_path = os.path.join(os.path.dirname(__file__), '..', 'certs', 'DigiCertGlobalRootCA.crt.pem')
 
-import os
 
 connect_args = {}
 
