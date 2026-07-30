@@ -18,12 +18,16 @@ DATABASE_URL = 'mysql+pymysql://{}:{}@{}:{}/{}'.format(
 # Get the absolute path to the CA certificate
 cert_path = os.path.join(os.path.dirname(__file__), '..', 'certs', 'DigiCertGlobalRootCA.crt.pem')
 
-# Create the database connection manager with SSL enabled (for Azure MySQL)
+
+connect_args = {}
+
+# Only enable SSL if explicitly requested
+if os.getenv("MYSQL_SSL", "false").lower() == "true":
+    connect_args["ssl_ca"] = cert_path
+
 engine = create_engine(
     DATABASE_URL,
-    connect_args={
-        'ssl_ca': cert_path  # Path to CA certificate
-    }
+    connect_args=connect_args
 )
 session_local = sessionmaker(autocommit=False, bind=engine)
 
