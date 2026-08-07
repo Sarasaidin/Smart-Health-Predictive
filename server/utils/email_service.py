@@ -37,14 +37,24 @@ def send_email(recipient: str, subject: str, content: str, content_type: str = "
             "content": message_content,
         }
 
+        print(f"Sending email to: {recipient}")
+
         poller = client.begin_send(message)
         result = poller.result()
-        print(f"Message sent to {recipient}: {result}")
+
+        print("Azure Email Result:")
+        print(result)
         return result
 
     except Exception as ex:
-        print(f"An error occurred while sending email: {ex}")
-        return None
+        import traceback
+
+        print("===== EMAIL ERROR =====")
+        traceback.print_exc()
+        print(ex)
+        print("=======================")
+
+    return None
 
 
 if __name__ == '__main__':
