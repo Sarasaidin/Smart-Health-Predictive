@@ -27,7 +27,7 @@ from ..models.dbmodels import UserAccount, UserAccountRole, \
 from ..utils.email_service import send_email
 from ..utils.audit_log import write_audit_log
 
-EMAIL_VALIDATION_ENABLED = False
+EMAIL_VALIDATION_ENABLED = True
 ALGORITHM = 'HS256'
 ACCESS_TOKEN_EXPIRE_MINUTES = 30
 VALIDATION_TOKEN_LENGTH = 128
@@ -200,7 +200,12 @@ async def register(user_reg: UserRegistrationDetails,
 
 def _send_validation_email(user: UserAccount, token: str):
     """Send an email-validation link to the newly registered user."""
-    validation_url = f"http://localhost:8000/validate-email?token={token}"
+    BACKEND_URL = os.getenv(
+        "BACKEND_URL",
+        "https://shp-backend.onrender.com"
+    )
+
+    validation_url = f"{BACKEND_URL}/validate-email?token={token}"
     email_subject = "Validate your account"
     email_content = f"""
     <html>

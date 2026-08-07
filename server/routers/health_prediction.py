@@ -61,9 +61,14 @@ class MerchantHealthDataInput(CamelModel):
 
 
 # Load AI prediction models
-cardio_model = joblib.load("prediction_models/model_cardio_h.joblib")
-stroke_model = joblib.load("prediction_models/model_stroke_h.joblib")
-diabetes_model = joblib.load("prediction_models/model_diabetes_h.joblib")
+import os
+
+BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+MODEL_DIR = os.path.join(BASE_DIR, "prediction_models")
+
+cardio_model = joblib.load(os.path.join(MODEL_DIR, "model_cardio_h.joblib"))
+stroke_model = joblib.load(os.path.join(MODEL_DIR, "model_stroke_h.joblib"))
+diabetes_model = joblib.load(os.path.join(MODEL_DIR, "model_diabetes_h.joblib"))
 
 
 gender_map = {'Male': 1, 'Female': 0}
