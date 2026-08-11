@@ -1,82 +1,80 @@
-from azure.communication.email import EmailClient
 import os
+import smtplib
+import traceback
+from pathlib import Path
+from email.mime.multipart import MIMEMultipart
+from email.mime.text import MIMEText
 from dotenv import load_dotenv
-# Load environment variables.
-load_dotenv()
 
+BASE_DIR = Path(__file__).resolve().parent.parent
+load_dotenv(BASE_DIR / ".env")
 
-def send_email(recipient: str, subject: str, content: str, content_type: str = "plainText"):
+def send_email(
+    recipient: str,
+    subject: str,
+    content: str,
+    content_type: str = "plainText"
+):
     """
-    Sends an email using Azure Communication Service.
+    Sends an email using Brevo SMTP.
 
-    :param recipient: The email address of the recipient.
-    :param subject: The subject of the email.
-    :param content: The body of the email (either plain text or HTML).
-    :param content_type: The type of content, 'plainText' or 'html'. Defaults to 'plainText'.
-    :return: The result of the send operation.
+    :param recipient: Recipient email address.
+    :param subject: Email subject.
+    :param content: Email body.
+    :param content_type: 'plainText' or 'html'.
+    :return: True if sent successfully, otherwise None.
     """
+
     try:
-        # It's recommended to use environment variables for connection strings.
-        connection_string = os.environ.get("AZURE_EMAIL_CONNECTION_STRING", "")
-        sender_address = os.environ.get("AZURE_EMAIL_SENDER_ADDRESS")
-        client = EmailClient.from_connection_string(connection_string)
+        smtp_host = os.getenv("SMTP_HOST", "smtp-relay.brevo.com")
+        smtp_port = int(os.getenv("SMTP_PORT", "587"))
+        smtp_username = os.getenv("SMTP_USERNAME")
+        smtp_password = os.getenv("SMTP_PASSWORD")
+        sender_email = os.getenv("SMTP_FROM_EMAIL")
+        sender_name = os.getenv(
+            "SMTP_FROM_NAME",
+            "Ever AI Technologies"
+        )
 
-        message_content = {
-            "subject": subject,
-        }
-        if content_type == "html":
-            message_content["html"] = content
+        if not smtp_username:
+            raise ValueError("SMTP_USERNAME is not configured")
+
+        if not smtp_password:
+            raise ValueError("SMTP_PASSWORD is not configured")
+
+        if not sender_email:
+            raise ValueError("SMTP_FROM_EMAIL is not configured")
+
+        message = MIMEMultipart("alternative")
+        message["Subject"] = subject
+        message["From"] = f"{sender_name} <{sender_email}>"
+        message["To"] = recipient
+
+        if content_type.lower() == "html":
+            message.attach(MIMEText(content, "html"))
         else:
-            message_content["plainText"] = content
+            message.attach(MIMEText(content, "plain"))
 
-        message = {
-            "senderAddress": sender_address,
-            "recipients": {
-                "to": [{"address": recipient}]
-            },
-            "content": message_content,
-        }
-
+        print("===== BREVO EMAIL =====")
         print(f"Sending email to: {recipient}")
+        print(f"Subject: {subject}")
+        print(f"From: {sender_email}")
 
-        poller = client.begin_send(message)
-        result = poller.result()
+        with smtplib.SMTP(smtp_host, smtp_port) as server:
+            server.starttls()
+            server.login(smtp_username, smtp_password)
+            server.sendmail(
+                sender_email,
+                recipient,
+                message.as_string()
+            )
 
-        print("Azure Email Result:")
-        print(result)
-        return result
+        print("Email sent successfully.")
+        return True
 
     except Exception as ex:
-        import traceback
-
         print("===== EMAIL ERROR =====")
+        print(str(ex))
         traceback.print_exc()
-        print(ex)
-        print("=======================")
-
-    return None
-
-
-if __name__ == '__main__':
-    # Example of sending a plain text email
-    send_email(
-        recipient="test@gmail.com",
-        subject="Test Email (Plain Text)",
-        content="Hello world via email from the new function."
-    )
-
-    # Example of sending an HTML email
-    html_content = """
-    <html>
-        <body>
-            <h1>Hello world via email.</h1>
-            <p>This is an HTML email from the new function.</p>
-        </body>
-    </html>
-    """
-    send_email(
-        recipient="test@gmail.com",
-        subject="Test Email (HTML)",
-        content=html_content,
-        content_type="html"
-    )
+        print("======================")
+        return None
