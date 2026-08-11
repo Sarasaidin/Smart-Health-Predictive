@@ -26,7 +26,7 @@ const LoginForm = () => {
   const location = useLocation();
 
   const { refreshUser } = useContext(UserContext);
-  const [isLoginUnsuccessful, setIsLoginUnsuccessful] = useState(false);
+  const [loginError, setLoginError] = useState("");
   const [password, setPassword] = useState(null);
   const [isPasswordValid, setIsPasswordValid] = useState(false);
   const [alertPasswordRequired, setAlertPasswordRequired] = useState(false);
@@ -47,20 +47,22 @@ const LoginForm = () => {
     setPassword(e.password);
   }
 
-  function generateUnsuccessfulLoginAlert() {
-    if (isLoginUnsuccessful) {
+  function generateLoginAlert() {
+    if (loginError) {
       return (
         <Alert variant="filled" severity="error">
-          {" "}
-          Login details are incorrect
+          {loginError}
         </Alert>
       );
     }
+
     return null;
   }
 
   async function handleLogin(e) {
     e.preventDefault();
+
+    setLoginError("");
 
     // Check if all input fields are valid.
     if (!isEmailValid) {
@@ -86,22 +88,25 @@ const LoginForm = () => {
       }),
       credentials: "include",
     })
-      .then((response) => {
+      .then(async (response) => {
+        const data = await response.json();
+
         if (!response.ok) {
-          throw new Error(response.status);
+          throw new Error(data.detail || "Login details are incorrect");
         }
-        return response.json();
-      })
-      .then(async (data) => {
-        await refreshUser();
 
-        const from = location.state?.from || "/landing";
+        return data;
+     })
+    .then(async (data) => {
+      await refreshUser();
 
-        navigate(from, { replace: true });
-      })
-      .catch((error) => {
-        setIsLoginUnsuccessful(true);
-      });
+      const from = location.state?.from || "/landing";
+
+      navigate(from, { replace: true });
+    })
+    .catch((error) => {
+      setLoginError(error.message);
+    });
 
     setIsLoading(false);
   }
@@ -124,7 +129,7 @@ const LoginForm = () => {
     >
       <CardContent>
         <Stack spacing={2}>
-          {generateUnsuccessfulLoginAlert()}
+          {generateLoginAlert()}
           <EmailInputField
             onChange={validateEmail}
             showRequired={alertEmailRequired}

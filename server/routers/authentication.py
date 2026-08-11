@@ -375,7 +375,10 @@ def authenticate_user(email: str, password: str, db_conn: Session):
         return False
 
     if EMAIL_VALIDATION_ENABLED and not user.IsValidated:
-        return False
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Email address not verified. Please check your inbox to verify your email address."
+        )
 
     if not verify_password(password, user.PasswordHash):
         return False
