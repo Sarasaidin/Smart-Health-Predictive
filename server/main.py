@@ -7,6 +7,7 @@ variable ``CORS_ORIGINS`` or a default set of development origins.
 import os
 
 from fastapi import FastAPI
+from fastapi.staticfiles import StaticFiles
 from fastapi.middleware.cors import CORSMiddleware
 
 from .routers import health_prediction, authentication, users, admin
@@ -26,6 +27,11 @@ ORIGINS = DEFAULT_ORIGINS + [
 ]
 
 app = FastAPI()
+app.mount(
+    "/static",
+    StaticFiles(directory="server/static"),
+    name="static",
+)
 app.add_middleware(
     CORSMiddleware,
     allow_origins=ORIGINS,
