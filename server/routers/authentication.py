@@ -199,23 +199,154 @@ async def register(user_reg: UserRegistrationDetails,
 
 
 def _send_validation_email(user: UserAccount, token: str):
-    """Send an email-validation link to the newly registered user."""
+    """Send a branded email-validation link to the newly registered user."""
     BACKEND_URL = os.getenv(
         "BACKEND_URL",
         "https://shp-backend.onrender.com"
     )
 
     validation_url = f"{BACKEND_URL}/validate-email?token={token}"
-    email_subject = "Validate your account"
+
+    logo_url = f"{BACKEND_URL}/static/images/wellai-logo.png"
+
+    email_subject = "Verify your WellAI account"
+
     email_content = f"""
     <html>
-        <body>
-            <h1>Welcome to Smart Health Predictive!</h1>
-            <p>Please click the link below to validate your email address:</p>
-            <a href="{validation_url}">{validation_url}</a>
+        <body style="
+            margin: 0;
+            padding: 0;
+            background-color: #f5f5f5;
+            font-family: Arial, Helvetica, sans-serif;
+        ">
+            <div style="
+                max-width: 600px;
+                margin: 30px auto;
+                background-color: #ffffff;
+                border-radius: 8px;
+                overflow: hidden;
+                box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+            ">
+
+                <!-- Header -->
+                <div style="
+                    background-color: #ffffff;
+                    padding: 25px;
+                    text-align: center;
+                    border-bottom: 1px solid #eeeeee;
+                ">
+                    <img
+                        src="{logo_url}"
+                        alt="WellAI"
+                        style="
+                            max-width: 220px;
+                            width: 100%;
+                            height: auto;
+                        "
+                    >
+                </div>
+
+                <!-- Content -->
+                <div style="
+                    padding: 35px 40px;
+                    color: #333333;
+                ">
+                    <h1 style="
+                        color: #6F2C91;
+                        font-size: 24px;
+                        margin-top: 0;
+                    ">
+                        Verify your WellAI account
+                    </h1>
+
+                    <p style="font-size: 16px; line-height: 1.6;">
+                        Registration successful!
+                    </p>
+
+                    <p style="
+                        font-size: 16px;
+                        line-height: 1.6;
+                    ">
+                        Thank you for creating your WellAI account.
+                        Please verify your email address to complete
+                        your account setup.
+                    </p>
+
+                    <!-- Verification button -->
+                    <div style="
+                        text-align: center;
+                        margin: 30px 0;
+                    ">
+                        <a
+                            href="{validation_url}"
+                            style="
+                                display: inline-block;
+                                padding: 14px 30px;
+                                background-color: #6F2C91;
+                                color: #ffffff;
+                                text-decoration: none;
+                                border-radius: 6px;
+                                font-weight: bold;
+                                font-size: 16px;
+                            "
+                        >
+                            Verify my email
+                        </a>
+                    </div>
+
+                    <p style="
+                        font-size: 13px;
+                        line-height: 1.5;
+                        color: #666666;
+                    ">
+                        If you did not create a WellAI account,
+                        you can safely ignore this email.
+                    </p>
+
+                    <p style="
+                        font-size: 13px;
+                        line-height: 1.5;
+                        color: #666666;
+                    ">
+                        For your security, please do not forward this
+                        email or share your verification link.
+                    </p>
+                </div>
+
+                <!-- Footer -->
+                <div style="
+                    background-color: #f8f8f8;
+                    padding: 20px;
+                    text-align: center;
+                    color: #777777;
+                    font-size: 12px;
+                ">
+                    <p style="margin: 5px 0;">
+                        Please do not reply to this email.
+                    </p>
+
+                    <p style="margin: 10px 0;">
+                        <a
+                            href="https://wellai.app/privacy-notice/"
+                            style="
+                                color: #6F2C91;
+                                text-decoration: none;
+                            "
+                        >
+                            Privacy Notice
+                        </a>
+                    </p>
+
+                    <p style="margin: 5px 0;">
+                        &copy; 2026 WellAI Sdn. Bhd. All rights reserved.
+                    </p>
+                </div>
+
+            </div>
         </body>
     </html>
     """
+
     send_email(
         recipient=user.Email,
         subject=email_subject,
@@ -227,10 +358,152 @@ def _send_validation_email(user: UserAccount, token: str):
 @router.get("/validate-email")
 async def validate_email_address(token: str, db_conn: Session = Depends(get_db)):
     """Validate a user's email address via a signed token sent by email."""
-    validation_failure_exception = HTTPException(
-        status_code=status.HTTP_400_BAD_REQUEST,
-        detail="Invalid or expired validation token."
-    )
+    def validation_error_response():
+        html_content = """
+        <!DOCTYPE html>
+        <html lang="en">
+        <head>
+            <meta charset="UTF-8">
+            <meta name="viewport" content="width=device-width, initial-scale=1.0">
+            <title>Verification Link Invalid - WellAI</title>
+            <style>
+                body {
+                    margin: 0;
+                    padding: 40px 20px;
+                    background-color: #f7f7f7;
+                    font-family: Arial, Helvetica, sans-serif;
+                    color: #333333;
+                }
+
+                .container {
+                    max-width: 600px;
+                    margin: 40px auto;
+                    background-color: #ffffff;
+                    border-radius: 12px;
+                    overflow: hidden;
+                    box-shadow: 0 4px 18px rgba(0, 0, 0, 0.08);
+                }
+
+                .header {
+                    background-color: #702F8A;
+                    padding: 30px 20px;
+                    text-align: center;
+                    color: #ffffff;
+                }
+
+                .brand {
+                    font-size: 32px;
+                    font-weight: bold;
+                }
+
+                .tagline {
+                    margin-top: 6px;
+                    font-size: 14px;
+                }
+
+                .content {
+                    padding: 40px 35px;
+                    text-align: center;
+                }
+
+                .error-icon {
+                    width: 64px;
+                    height: 64px;
+                    margin: 0 auto 20px;
+                    border-radius: 50%;
+                    background-color: #702F8A;
+                    color: #ffffff;
+                    font-size: 32px;
+                    line-height: 64px;
+                    font-weight: bold;
+                }
+
+                h1 {
+                    color: #702F8A;
+                    font-size: 26px;
+                    margin-bottom: 18px;
+                }
+                p {
+                    font-size: 16px;
+                    line-height: 1.6;
+                    color: #555555;
+                }
+
+                .footer {
+                    border-top: 1px solid #eeeeee;
+                    background-color: #fafafa;
+                    padding: 22px 20px;
+                    text-align: center;
+                    color: #777777;
+                    font-size: 13px;
+                }
+
+                .footer a {
+                    color: #702F8A;
+                    text-decoration: none;
+                }
+
+                @media (max-width: 600px) {
+                    body {
+                        padding: 20px 10px;
+                    }
+
+                    .content {
+                        padding: 30px 20px;
+                    }
+
+                    h1 {
+                        font-size: 23px;
+                    }
+                }
+            </style>
+        </head>
+
+        <body>
+            <div class="container">
+
+                <div class="header">
+                    <div class="brand">WellAI</div>
+                    <div class="tagline">Love Yourself</div>
+                </div>
+
+                <div class="content">
+                    <div class="error-icon">&#33;</div>
+
+                    <h1>Verification Link Invalid</h1>
+
+                    <p>
+                        This email verification link is no longer valid.
+                        It may have expired or already been used.
+                    </p>
+
+                    <p>
+                        Please request a new verification email to continue
+                        setting up your WellAI account.
+                    </p>
+                </div>
+
+                <div class="footer">
+                    <p>
+                        <a href="https://wellai.app/privacy-notice/" target="_blank">
+                            Privacy Notice
+                        </a>
+                    </p>
+
+                    <p>
+                        &copy; 2026 WellAI Sdn. Bhd. All rights reserved.
+                    </p>
+                </div>
+
+            </div>
+        </body>
+        </html>
+        """
+
+        return HTMLResponse(
+            content=html_content,
+            status_code=status.HTTP_400_BAD_REQUEST
+        )
 
     # Find the token in the database
     validation_token_entry = db_conn.query(
@@ -238,18 +511,18 @@ async def validate_email_address(token: str, db_conn: Session = Depends(get_db))
 
     # Check if the token exists
     if not validation_token_entry:
-        raise validation_failure_exception
+        return validation_error_response()
 
     # Check if the token has expired
     if validation_token_entry.ExpiresAt < datetime.utcnow():
-        raise validation_failure_exception
+        return validation_error_response()
 
     # Get the user associated with the token
     user = db_conn.query(UserAccount).filter_by(
         UserID=validation_token_entry.UserID).first()
     if not user:
         # This should not happen if database integrity is maintained
-        raise validation_failure_exception
+        return validation_error_response()
 
     # Update the user's validation status
     user.IsValidated = True
@@ -266,21 +539,161 @@ async def validate_email_address(token: str, db_conn: Session = Depends(get_db))
                     description=f"Email successfully validated.")
 
     html_content = """
-    <html>
-        <head>
-            <title>Email Validation</title>
-            <style>
-                body { font-family: Arial, sans-serif; text-align: center; margin-top: 50px; }
-                .container { display: inline-block; text-align: left; padding: 20px; border: 1px solid #ccc; border-radius: 10px; }
-                h1 { color: #127067; }
-            </style>
-        </head>
-        <body>
-            <div class="container">
-                <h1>Email Validated Successfully!</h1>
-                <p>Your email has been successfully validated. You can now close this window and log in to your account.</p>
+    <!DOCTYPE html>
+    <html lang="en">
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>Email Verified - WellAI</title>
+        <style>
+            body {
+                margin: 0;
+                padding: 40px 20px;
+                background-color: #f7f7f7;
+                font-family: Arial, Helvetica, sans-serif;
+                color: #333333;
+            }
+
+            .container {
+                max-width: 600px;
+                margin: 40px auto;
+                background-color: #ffffff;
+                border-radius: 12px;
+                overflow: hidden;
+                box-shadow: 0 4px 18px rgba(0, 0, 0, 0.08);
+            }
+
+            .header {
+                background-color: #702F8A;
+                padding: 30px 20px;
+                text-align: center;
+                color: #ffffff;
+            }
+
+            .brand {
+                font-size: 32px;
+                font-weight: bold;
+                margin: 0;
+            }
+
+            .tagline {
+                margin: 6px 0 0;
+                font-size: 14px;
+                font-weight: 500;
+            }
+
+            .content {
+                padding: 40px 35px;
+                text-align: center;
+            }
+
+            .success-icon {
+                width: 64px;
+                height: 64px;
+                margin: 0 auto 20px;
+                border-radius: 50%;
+                background-color: #702F8A;
+                color: #ffffff;
+                font-size: 36px;
+                line-height: 64px;
+                font-weight: bold;
+            }
+
+            h1 {
+                margin: 0 0 18px;
+                color: #702F8A;
+                font-size: 28px;
+            }
+
+            p {
+                margin: 10px 0;
+                font-size: 16px;
+                line-height: 1.6;
+            }
+
+            .message {
+                color: #555555;
+            }
+
+            .footer {
+                border-top: 1px solid #eeeeee;
+                background-color: #fafafa;
+                padding: 22px 20px;
+                text-align: center;
+                color: #777777;
+                font-size: 13px;
+            }
+
+            .footer a {
+                color: #702F8A;
+                text-decoration: none;
+            }
+
+            .footer a:hover {
+                text-decoration: underline;
+            }
+
+            @media (max-width: 600px) {
+                body {
+                    padding: 20px 10px;
+                }
+
+                .container {
+                    margin: 20px auto;
+                }
+
+                .content {
+                    padding: 30px 20px;
+                }
+
+                h1 {
+                    font-size: 24px;
+                }
+            }
+        </style>
+    </head>
+
+    <body>
+        <div class="container">
+
+            <div class="header">
+                <div class="brand">WellAI</div>
+                <div class="tagline">Love Yourself</div>
             </div>
-        </body>
+
+            <div class="content">
+                <div class="success-icon">&#10003;</div>
+
+                <h1>Email Verified Successfully!</h1>
+
+                <p class="message">
+                    Your email address has been successfully verified.
+                </p>
+
+                <p class="message">
+                    Your WellAI account is now ready. You can close this window
+                    and return to the WellAI application to log in.
+                </p>
+            </div>
+
+            <div class="footer">
+                <p>
+                    Please do not reply to this page.
+                </p>
+
+                <p>
+                    <a href="https://wellai.app/privacy-notice/" target="_blank">
+                        Privacy Notice
+                    </a>
+                </p>
+
+                <p>
+                    &copy; 2026 WellAI Sdn. Bhd. All rights reserved.
+                </p>
+            </div>
+
+        </div>
+    </body>
     </html>
     """
     return HTMLResponse(content=html_content)
