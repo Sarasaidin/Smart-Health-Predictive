@@ -6,6 +6,9 @@ variable ``CORS_ORIGINS`` or a default set of development origins.
 """
 import os
 
+import os
+from pathlib import Path
+
 from fastapi import FastAPI
 from fastapi.staticfiles import StaticFiles
 from fastapi.middleware.cors import CORSMiddleware
@@ -27,9 +30,12 @@ ORIGINS = DEFAULT_ORIGINS + [
 ]
 
 app = FastAPI()
+
+STATIC_DIR = Path(__file__).resolve().parent / "static"
+
 app.mount(
     "/static",
-    StaticFiles(directory="server/static"),
+    StaticFiles(directory=str(STATIC_DIR)),
     name="static",
 )
 app.add_middleware(
